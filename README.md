@@ -10,6 +10,7 @@ The convolution :
 - is very memory-hungry, and will work faster if there is a lot of free memory.
 - should not crash if the amount of free memory is low (it tries to adjust itself)
 - survives all kinds of paddings, strides, kernel sizes...
+- is not optimized for gradInput computation in the Layer-1 RGB case (I don't need it).
 
 
 How to install :
