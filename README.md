@@ -17,17 +17,13 @@ How to install :
 - do "luarocks make"
 - require 'nnbhwd' in torch
 - use
-
-''' 
+``` 
     nn.SpatialConvolutionBHWD(nInputPlane, nOutputPlane, kW, kH, dW, dH, padleft, padright, padtop, padbottom)
-'''
-
+```
 - use 
-
-'''
+```
     nn.SpatialMaxPoolingBHWD(poolW, poolH, dW, dH)
-'''
-
+```
 
 These modules will become obsolete very soon, when nvidia finishes implementing cuDNN.
 
