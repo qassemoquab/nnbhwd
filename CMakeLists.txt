@@ -1,0 +1,114 @@
+
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6 FATAL_ERROR)
+CMAKE_POLICY(VERSION 2.6)
+IF(LUAROCKS_PREFIX)
+    MESSAGE(STATUS "Installing Torch through Luarocks")
+    STRING(REGEX REPLACE "(.*)lib/luarocks/rocks.*" "\\1" CMAKE_INSTALL_PREFIX  "${LUAROCKS_PREFIX}")
+    MESSAGE(STATUS "Prefix inferred from Luarocks: ${CMAKE_INSTALL_PREFIX}")
+ENDIF()
+FIND_PACKAGE(Torch REQUIRED)
+
+FILE(GLOB luasrc *.lua)
+#SET(luasrc ${luasrc} test/test.lua)
+ADD_TORCH_PACKAGE(cunnbhwd "" "${luasrc}" "Cunnbhwd")
+
+
+FIND_PACKAGE(CUDA 4.0 REQUIRED)
+
+SET(src-cuda init.cu)
+
+
+LIST(APPEND CUDA_NVCC_FLAGS "-arch=sm_35")
+
+INCLUDE_DIRECTORIES("${Torch_INSTALL_INCLUDE}/THC")
+LINK_DIRECTORIES("${Torch_INSTALL_LIB}")
+
+CUDA_ADD_LIBRARY(cunnbhwd MODULE ${src-cuda})
+TARGET_LINK_LIBRARIES(cunnbhwd luaT THC TH)
+IF(APPLE)
+  SET_TARGET_PROPERTIES(cunnbhwd PROPERTIES
+    LINK_FLAGS "-undefined dynamic_lookup")
+ENDIF()
+
+
+
+
+
+### Torch packages supposes libraries prefix is "lib"
+SET_TARGET_PROPERTIES(cunnbhwd PROPERTIES
+  PREFIX "lib"
+  IMPORT_PREFIX "lib")
+    
+INSTALL(TARGETS cunnbhwd
+  RUNTIME DESTINATION "${Torch_INSTALL_LUA_CPATH_SUBDIR}"
+  LIBRARY DESTINATION "${Torch_INSTALL_LUA_CPATH_SUBDIR}")
+
+INSTALL(
+  FILES
+  ${luasrc}
+  DESTINATION "${Torch_INSTALL_LUA_PATH_SUBDIR}/cunnbhwd")
+
+
+
+
+
+
+
+# OpenMP support?
+SET(WITH_OPENMP ON CACHE BOOL "OpenMP support if available?")
+IF (APPLE AND CMAKE_COMPILER_IS_GNUCC)
+  EXEC_PROGRAM (uname ARGS -v  OUTPUT_VARIABLE DARWIN_VERSION)
+  STRING (REGEX MATCH "[0-9]+" DARWIN_VERSION ${DARWIN_VERSION})
+  MESSAGE (STATUS "MAC OS Darwin Version: ${DARWIN_VERSION}")
+  IF (DARWIN_VERSION GREATER 9)
+    SET(APPLE_OPENMP_SUCKS 1)
+  ENDIF (DARWIN_VERSION GREATER 9)
+  EXECUTE_PROCESS (COMMAND ${CMAKE_C_COMPILER} -dumpversion
+    OUTPUT_VARIABLE GCC_VERSION)
+  IF (APPLE_OPENMP_SUCKS AND GCC_VERSION VERSION_LESS 4.6.2)
+    MESSAGE(STATUS "Warning: Disabling OpenMP (unstable with this version of GCC)")
+    MESSAGE(STATUS " Install GCC >= 4.6.2 or change your OS to enable OpenMP")
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unknown-pragmas")
+    SET(WITH_OPENMP OFF CACHE BOOL "OpenMP support if available?" FORCE)
+  ENDIF ()
+ENDIF ()
+
+IF (WITH_OPENMP)
+  FIND_PACKAGE(OpenMP)
+  IF(OPENMP_FOUND)
+    MESSAGE(STATUS "Compiling with OpenMP support")
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+  ENDIF(OPENMP_FOUND)
+ENDIF (WITH_OPENMP)
+
+LINK_DIRECTORIES("${Torch_INSTALL_LIB}")
+
+SET(src generic/init.c)
+
+FILE(GLOB luasrc *.lua)
+
+ADD_TORCH_PACKAGE(nnbhwd "${src}" "${luasrc}")
+
+TARGET_LINK_LIBRARIES(nnbhwd luaT TH)
+
+### Torch packages supposes libraries prefix is "lib"
+SET_TARGET_PROPERTIES(cunnbhwd PROPERTIES
+  PREFIX "lib"
+  IMPORT_PREFIX "lib")
+    
+INSTALL(TARGETS nnbhwd
+  RUNTIME DESTINATION "${Torch_INSTALL_LUA_CPATH_SUBDIR}"
+  LIBRARY DESTINATION "${Torch_INSTALL_LUA_CPATH_SUBDIR}")
+
+INSTALL(
+  FILES
+  ${luasrc}
+  DESTINATION "${Torch_INSTALL_LUA_PATH_SUBDIR}/nnbhwd")
+
+
+
+
+
+
