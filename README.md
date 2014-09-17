@@ -9,15 +9,17 @@ The convolution :
 - is very fast in some cases (when the number of filters becomes high).
 - is very memory-hungry, and will work faster if there is a lot of free memory.
 - should not crash if the amount of free memory is low (it tries to adjust itself)
-
+- survives all kinds of paddings, strides, kernel sizes...
 
 
 How to install :
 - clone the repo
 - do "luarocks make"
 - require 'nnbhwd' in torch
-- use nn.SpatialConvolutionBHWD(nInputPlane, nOutputPlane, kW, kH, dW, dH, padleft, padright, padtop, padbottom)
-- use nn.SpatialMaxPoolingBHWD(poolW, poolH, dW, dH)
+- use 
+    nn.SpatialConvolutionBHWD(nInputPlane, nOutputPlane, kW, kH, dW, dH, padleft, padright, padtop, padbottom)
+- use 
+    nn.SpatialMaxPoolingBHWD(poolW, poolH, dW, dH)
 
 These modules will become obsolete very soon, when nvidia finishes implementing cuDNN.
 
