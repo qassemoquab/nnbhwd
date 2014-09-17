@@ -22,10 +22,17 @@ How to install :
 These modules will become obsolete very soon, when nvidia finishes implementing cuDNN.
 
 If you use these, please cite 
+
 @TechReport{Oquab13,
+
 	author = "Oquab, M. and Bottou, L. and Laptev, I. and Sivic, J.",
+
 	title = "Weakly Supervised Object Recognition with Convolutional Neural Networks",
+
 	institution  = "INRIA",
+
 	year = "2014",
+
 	number = "HAL-01015140"
+
 }
