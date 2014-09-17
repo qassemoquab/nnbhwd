@@ -18,12 +18,10 @@ How to install :
 - require 'nnbhwd' in torch
 - use
 ``` 
-    nn.SpatialConvolutionBHWD(nInputPlane, nOutputPlane, kW, kH, dW, dH, padleft, padright, padtop, padbottom)
+nn.SpatialConvolutionBHWD(nInputPlane, nOutputPlane, kW, kH, dW, dH, padleft, padright, padtop, padbottom)
+nn.SpatialMaxPoolingBHWD(poolW, poolH, dW, dH)
 ```
-- use 
-```
-    nn.SpatialMaxPoolingBHWD(poolW, poolH, dW, dH)
-```
+
 
 These modules will become obsolete very soon, when nvidia finishes implementing cuDNN.
 
