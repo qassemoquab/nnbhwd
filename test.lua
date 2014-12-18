@@ -28,9 +28,9 @@ if true then
       s2=nn.Sequential()
 
       foo1=nn.SpatialConvolutionMM(ip,op,kw,kh,dw,dh)
-      m1 = nn.SpatialMaxPooling(mpkw,mpkh,dw,dh)
+      m1 = nn.SpatialMaxPooling(mpkw,mpkh,mpdw,mpdh)
       foo2=nn.SpatialConvolutionBHWD(ip,op,kw,kh,dw,dh)
-      m2 = nn.SpatialMaxPoolingBHWD(mpkw,mpkh,dw,dh)
+      m2 = nn.SpatialMaxPoolingBHWD(mpkw,mpkh,mpdw,mpdh)
 
       x2=torch.Tensor(bs,ih,iw,ip):uniform();
       x1=x2:transpose(3,4):transpose(2,3):contiguous();
@@ -86,9 +86,9 @@ if true then
       s2=nn.Sequential()
 
       foo1=nn.SpatialConvolution(ip,op,kw,kh,dw,dh)
-      m1 = nn.SpatialMaxPooling(mpkw,mpkh,dw,dh)
+      m1 = nn.SpatialMaxPooling(mpkw,mpkh,mpdw,mpdh)
       foo2=nn.SpatialConvolutionBHWD(ip,op,kw,kh,dw,dh)
-      m2 = nn.SpatialMaxPoolingBHWD(mpkw,mpkh,dw,dh)
+      m2 = nn.SpatialMaxPoolingBHWD(mpkw,mpkh,mpdw,mpdh)
 
       bs=32
 
@@ -132,3 +132,4 @@ if true then
    end
 end
 
+collectgarbage()

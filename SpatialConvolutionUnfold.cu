@@ -141,7 +141,7 @@ __global__ void copyPixelsInSlicesRGB(float *ptrinput0, float *ptrkslices0,
 	const int tidx=threadIdx.x;
 	const int batchindex=blockIdx.z*blockDim.z+threadIdx.z;
 
-	int i,j,b;
+	int i,j;
 
 	int imin, jmin, imax, jmax;
 	int inputoffset, ksliceoffset;
@@ -329,8 +329,6 @@ __global__ void copyBiasToOutputs(float *ptrbias, float *ptroutput, const int si
 	const int tidy=blockIdx.y;
 	const int tidz=blockIdx.z;	
 
-	int i;
-
 	float val = ptrbias[tidx];
 	ptroutput+= tidz*imstride + tidy*linestride;
 
@@ -503,7 +501,7 @@ static int cunxn_SpatialConvolutionUnfold_updateOutput(lua_State *L)
 		// put output in matrix mode
 		THCudaTensor_resize2d(outputSplit, splitsize* size1* size2, nOutputPlane);
 		//  printf("sgemm\n");
-		THCudaTensor_addmm(outputSplit, 1,1, kernelSlices, kernels);
+		THCudaTensor_addmm(outputSplit, 1, outputSplit, 1, kernelSlices, kernels);
 		THCudaTensor_free(outputSplit);
 	}
 
@@ -551,8 +549,6 @@ static int cunxn_SpatialConvolutionUnfold_updateGradInput(lua_State *L)
 	THCudaTensor_resize2d(kernels, nOutputPlane, kW*kH*nInputPlane);
 
 	long batchsize = input->size[0];
-	long isize1 = input->size[1];
-	long isize2 = input->size[2];
 	long size1 = gradOutput->size[1];
 	long size2 = gradOutput->size[2];
 
@@ -583,7 +579,7 @@ static int cunxn_SpatialConvolutionUnfold_updateGradInput(lua_State *L)
 		THCudaTensor* gradInputSplit = THCudaTensor_newNarrow(gradInput, 0, split*newbatchsize, splitsize);
 		THCudaTensor_resize2d(gradOutputSplit, splitsize*size1*size2, nOutputPlane);
 		// backprop gradinput into the slices
-		THCudaTensor_addmm(backwardSlices, 0, 1, gradOutputSplit, kernels);
+		THCudaTensor_addmm(backwardSlices, 0, backwardSlices, 1, gradOutputSplit, kernels);
 		THCudaTensor_resize4d(gradOutputSplit, splitsize, size1, size2, nOutputPlane);
 		unsliceGradient(backwardSlices, gradInputSplit, gradOutputSplit, kH, kW, dH, dW, padup, paddown, padleft, padright);
 		THCudaTensor_free(gradInputSplit);
@@ -615,14 +611,12 @@ static int cunxn_SpatialConvolutionUnfold_accGradParameters(lua_State *L)
 	long padright = luaT_getfieldcheckint(L, 1, "padright");
 	long nOutputPlane = luaT_getfieldcheckint(L, 1, "nOutputPlane");
 	long nInputPlane = luaT_getfieldcheckint(L, 1, "nInputPlane");
-	long zeroGradients = 0; //luaT_getfieldcheckint(L, 1, "zeroGradients");
+
 	float scale = luaL_optnumber(L, 4, 1);
 
 	// find the size of kernelslices
 	long batchsize = gradOutput->size[0];
-	long batchstride = gradOutput->stride[0];
-	long isize1 = input->size[1];
-	long isize2 = input->size[2];
+
 	long size1 = gradOutput->size[1];
 	long size2 = gradOutput->size[2];
 
@@ -663,7 +657,7 @@ static int cunxn_SpatialConvolutionUnfold_accGradParameters(lua_State *L)
 		THCudaTensor_transpose(gradOutputSplit, NULL, 0, 1);
 		THCudaTensor* inputSplit = THCudaTensor_newNarrow(input, 0, split*newbatchsize, splitsize);
 		sliceInput(inputSplit, kernelSlices, kH, kW, dH, dW, padup, paddown, padleft, padright);
-		THCudaTensor_addmm(gradWeight, 1, scale, gradOutputSplit, kernelSlices);
+		THCudaTensor_addmm(gradWeight, 1, gradWeight, scale, gradOutputSplit, kernelSlices);
 		THCudaTensor_free(inputSplit);
 		THCudaTensor_free(gradOutputSplit);
 	}
@@ -675,7 +669,7 @@ static int cunxn_SpatialConvolutionUnfold_accGradParameters(lua_State *L)
    THCudaTensor* ones = THCudaTensor_newWithSize2d(1,batchsize*size1*size2);
    THCudaTensor_fill(ones, 1);
    THCudaTensor_resize2d(gradBias, 1, nOutputPlane);
-   THCudaTensor_addmm(gradBias, 1, scale, ones, gradOutTmp);
+   THCudaTensor_addmm(gradBias, 1, gradBias, scale, ones, gradOutTmp);
    THCudaTensor_resize1d(gradBias, nOutputPlane);
 	THCudaTensor_free(ones);
 	THCudaTensor_free(gradOutTmp);
