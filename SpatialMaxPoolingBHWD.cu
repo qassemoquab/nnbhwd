@@ -1,3 +1,5 @@
+#include "utils.h"
+
 #ifndef assert
 #define assert(e)  \
     if (!(e)) { \
@@ -137,6 +139,7 @@ __global__ void maxPoolBackward(float *ptrinput, float *ptroutput, float *ptrgra
 
 static int cunxn_SpatialMaxPooling_updateOutput(lua_State *L)
 {
+  THCState *state = getCutorchState(L);
   THCudaTensor *input = (THCudaTensor *)luaT_checkudata(L, 2, "torch.CudaTensor");
   THCudaTensor *output = (THCudaTensor *)luaT_getfieldcheckudata(L, 1, "output", "torch.CudaTensor");
   long poolW = luaT_getfieldcheckint(L, 1, "poolW");
@@ -146,7 +149,7 @@ static int cunxn_SpatialMaxPooling_updateOutput(lua_State *L)
 
 
   // input should be contiguous already but... well.
-  input = THCudaTensor_newContiguous(input);
+  input = THCudaTensor_newContiguous(state, input);
 
   // find the size of kernelslices
   long bs     = input->size[0];
@@ -158,10 +161,10 @@ static int cunxn_SpatialMaxPooling_updateOutput(lua_State *L)
   long outsize1 = (isize1 - poolH) / dH + 1;
   long outsize2 = (isize2 - poolW) / dW + 1;
 
-  THCudaTensor_resize4d(output, bs, outsize1, outsize2, isize3);
+  THCudaTensor_resize4d(state, output, bs, outsize1, outsize2, isize3);
 
-  float* ptroutput  = THCudaTensor_data(output);
-  float* ptrinput   = THCudaTensor_data(input);
+  float* ptroutput  = THCudaTensor_data(state, output);
+  float* ptrinput   = THCudaTensor_data(state, input);
 
 
   // cuda blocks & threads:
@@ -181,7 +184,7 @@ static int cunxn_SpatialMaxPooling_updateOutput(lua_State *L)
 
 
   // final cut:
-  THCudaTensor_free(input); 
+  THCudaTensor_free(state, input); 
   //THCudaTensor_select(output, NULL, dimension, 0);
 
   return 1;
@@ -192,7 +195,8 @@ static int cunxn_SpatialMaxPooling_updateOutput(lua_State *L)
 
 
 static int cunxn_SpatialMaxPooling_updateGradInput(lua_State *L)
-{
+{  
+  THCState *state = getCutorchState(L);
   THCudaTensor *input = (THCudaTensor *)luaT_checkudata(L, 2, "torch.CudaTensor");
   THCudaTensor *gradOutput = (THCudaTensor *)luaT_checkudata(L, 3, "torch.CudaTensor");
   THCudaTensor *gradInput = (THCudaTensor *)luaT_getfieldcheckudata(L, 1, "gradInput", "torch.CudaTensor");
@@ -211,15 +215,15 @@ static int cunxn_SpatialMaxPooling_updateGradInput(lua_State *L)
   long outsize1 = output->size[1];
   long outsize2 = output->size[2];
 
-  THCudaTensor_resizeAs(gradInput, input);
+  THCudaTensor_resizeAs(state, gradInput, input);
 
   dim3 blocks (isize1, isize2, (bs+7)/8);
   dim3 threads (32,1,8);
 
-  float* ptroutput  = THCudaTensor_data(output);
-  float* ptrinput   = THCudaTensor_data(input);
-  float* ptrgradoutput  = THCudaTensor_data(gradOutput);
-  float* ptrgradinput   = THCudaTensor_data(gradInput);
+  float* ptroutput  = THCudaTensor_data(state, output);
+  float* ptrinput   = THCudaTensor_data(state, input);
+  float* ptrgradoutput  = THCudaTensor_data(state, gradOutput);
+  float* ptrgradinput   = THCudaTensor_data(state, gradInput);
 
 
   maxPoolBackward <<<blocks,threads>>>(ptrinput, ptroutput, ptrgradinput, ptrgradoutput, isize1, isize2, outsize1, outsize2, isize3,  poolH, poolW, dH, dW, bs);

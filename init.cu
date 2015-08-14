@@ -11,6 +11,8 @@
 #include "SpatialMaxPoolingBHWD.cu"
 #include "SpatialConvolutionUnfold.cu"
 
+#include "utils.cu"
+
 LUA_EXTERNC DLL_EXPORT int luaopen_libcunnbhwd(lua_State *L);
 
 int luaopen_libcunnbhwd(lua_State *L)
